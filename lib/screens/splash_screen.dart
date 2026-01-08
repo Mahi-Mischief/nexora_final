@@ -31,7 +31,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
     _anim = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
     _controller.forward();
-    _checkAuthAndNavigate();
+    // Ensure the splash is rendered first; start auth check after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthAndNavigate();
+    });
   }
 
   Future<void> _checkAuthAndNavigate() async {
