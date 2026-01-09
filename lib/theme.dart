@@ -28,4 +28,23 @@ final ThemeData nexoraTheme = ThemeData(
     titleLarge: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
     bodyMedium: TextStyle(color: Colors.white70),
   ),
+  elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+      padding: EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+    ),
+  ),
+  outlinedButtonTheme: OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+    ),
+  ),
+  textButtonTheme: TextButtonThemeData(
+    style: TextButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.black,
+    ),
+  ),
 );
