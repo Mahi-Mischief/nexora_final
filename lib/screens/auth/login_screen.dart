@@ -94,6 +94,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                               if (ok) {
                                 final auth = ref.read(authProvider);
                                 if (auth.user != null && auth.user!.firstName == null) {
+                                  //Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
                                   Navigator.of(context).pushReplacementNamed(ProfileInfoScreen.routeName);
                                 } else {
                                   Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
