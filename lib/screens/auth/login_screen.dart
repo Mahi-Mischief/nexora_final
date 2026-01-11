@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:convert';
+
 import 'package:nexora_final/providers/auth_provider.dart';
+import 'package:nexora_final/services/auth_service.dart';
+import 'package:nexora_final/services/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:nexora_final/models/user.dart';
+import 'package:nexora_final/screens/home_screen.dart';
+import 'package:nexora_final/screens/profile_info_screen.dart';
 import 'package:nexora_final/screens/auth/signup_screen.dart';
 import 'package:nexora_final/screens/profile_info_screen.dart';
 import 'package:nexora_final/screens/home_screen.dart';
@@ -124,7 +132,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             OutlinedButton.icon(
               icon: Icon(Icons.account_circle),
               label: const Text('Continue with Google'),
-              onPressed: () {},
+              onPressed: () async {
+                setState(() => _loading = true);
+                final idToken = await AuthService.signInWithGoogle();
+                if (idToken == null) {
+                  setState(() => _loading = false);
+                  return;
+                }
+                final resp = await Api.post('/api/auth/google', body: {'idToken': idToken});
+                if (resp.statusCode == 200) {
+                  final j = jsonDecode(resp.body) as Map<String, dynamic>;
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('nexora_token', j['token']);
+                  await prefs.setString('nexora_user', jsonEncode(j['user']));
+                  final user = NexoraUser.fromJson(j['user']);
+                  await ref.read(authProvider.notifier).updateUser(user);
+                  if (!mounted) return;
+                  if (user.firstName == null) {
+                    Navigator.of(context).pushReplacementNamed(ProfileInfoScreen.routeName);
+                  } else {
+                    Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google sign-in failed')));
+                }
+                setState(() => _loading = false);
+              },
             ),
             const SizedBox(height: 32),
             Row(

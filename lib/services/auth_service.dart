@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:nexora_final/services/api.dart';
 import 'package:nexora_final/models/user.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:nexora_final/services/google_signin.dart' show getGoogleAuthTokens;
 
 class AuthService {
   static Future<Map<String, dynamic>?> signup({required String username, required String email, required String password, required String role}) async {
@@ -69,6 +72,31 @@ class AuthService {
     } catch (e) {
       print('Update profile error: $e');
       rethrow;
+    }
+  }
+
+  // Sign in with Google via Firebase and return the Firebase ID token (JWT)
+  static Future<String?> signInWithGoogle() async {
+    try {
+      if (kIsWeb) {
+        final tokens = await getGoogleAuthTokens();
+        if (tokens == null) return null;
+        final idToken = tokens['idToken'];
+        return idToken;
+      } else {
+        final tokens = await getGoogleAuthTokens();
+        if (tokens == null) return null;
+        final credential = fb.GoogleAuthProvider.credential(
+          accessToken: tokens['accessToken'],
+          idToken: tokens['idToken'],
+        );
+        final userCredential = await fb.FirebaseAuth.instance.signInWithCredential(credential);
+        final idToken = await userCredential.user?.getIdToken();
+        return idToken;
+      }
+    } catch (e) {
+      print('Google sign-in error: $e');
+      return null;
     }
   }
 }

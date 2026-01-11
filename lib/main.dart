@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:nexora_final/services/firebase_flag.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:nexora_final/screens/splash_screen.dart';
 import 'package:nexora_final/theme.dart';
@@ -10,14 +12,25 @@ import 'package:nexora_final/screens/auth/signup_screen.dart';
 import 'package:nexora_final/screens/profile_info_screen.dart';
 import 'package:nexora_final/screens/home_screen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  // Initialize and run inside the same zone to avoid "Zone mismatch" errors.
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    try {
+      await Firebase.initializeApp();
+      FirebaseFlag.setConfigured(true);
+    } catch (e) {
+      // Firebase not configured for web — mark flag and continue so app doesn't crash.
+      // The splash screen will show instructions.
+      // ignore: avoid_print
+      print('Firebase initialization failed: $e');
+      FirebaseFlag.setConfigured(false);
+    }
 
-  FlutterError.onError = (details) {
-    FlutterError.dumpErrorToConsole(details);
-  };
+    FlutterError.onError = (details) {
+      FlutterError.dumpErrorToConsole(details);
+    };
 
-  runZonedGuarded(() {
     runApp(const ProviderScope(child: NexoraApp()));
   }, (error, stack) {
     // Ensure uncaught errors are printed to the console for easier debugging

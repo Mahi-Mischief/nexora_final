@@ -2,12 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+// Using Icon instead of SVG to avoid runtime SVG parsing issues.
 import 'package:nexora_final/providers/auth_provider.dart';
 import 'package:nexora_final/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:nexora_final/screens/auth/login_screen.dart';
 import 'package:nexora_final/screens/home_screen.dart';
+import 'package:nexora_final/services/firebase_flag.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   static const routeName = '/';
@@ -30,6 +31,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('nexora_token');
+      // If Firebase is not configured (web), show login so user can see instructions.
+      if (!FirebaseFlag.configured) {
+        Future.delayed(const Duration(milliseconds: 400), () {
+          if (!mounted) return;
+          Navigator.of(context).pushReplacementNamed(LoginScreen.routeName);
+        });
+        return;
+      }
       if (token == null) {
         Future.delayed(const Duration(milliseconds: 2000), () {
           if (!mounted) return;
@@ -61,11 +70,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/logo.svg',
-              width: 100,
-              height: 100,
-              colorFilter: const ColorFilter.mode(Color(0xFFE3B857), BlendMode.srcIn),
+            Icon(
+              Icons.school,
+              size: 100,
+              color: const Color(0xFFE3B857),
             ),
             const SizedBox(height: 20),
             Text(

@@ -6,6 +6,7 @@ const db = require('../db');
 require('dotenv').config();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret';
+const admin = require('../firebaseAdmin');
 
 // POST /api/auth/signup
 router.post('/signup', async (req, res) => {
@@ -62,6 +63,40 @@ router.get('/me', async (req, res) => {
     res.json(rows[0]);
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token' });
+  }
+});
+
+// POST /api/auth/google
+router.post('/google', async (req, res) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) return res.status(400).json({ error: 'Missing idToken' });
+
+    const decoded = await admin.auth().verifyIdToken(idToken);
+    const email = decoded.email;
+    const name = decoded.name || '';
+    const firstName = name ? name.split(' ')[0] : null;
+    const lastName = name ? name.split(' ').slice(1).join(' ') : null;
+
+    // find or create user by email
+    let { rows } = await db.query('SELECT id, username, email, first_name, last_name, role, school, age, grade, address FROM users WHERE email=$1', [email]);
+    let user;
+    if (!rows.length) {
+      const username = email.split('@')[0];
+      const r = await db.query(
+        'INSERT INTO users (username, email, first_name, last_name) VALUES ($1,$2,$3,$4) RETURNING id, username, email, first_name, last_name, role, school, age, grade, address',
+        [username, email, firstName, lastName]
+      );
+      user = r.rows[0];
+    } else {
+      user = rows[0];
+    }
+
+    const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user });
+  } catch (err) {
+    console.error('Google auth error', err);
+    res.status(401).json({ error: 'Invalid token' });
   }
 });
 

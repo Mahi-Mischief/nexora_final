@@ -37,7 +37,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset('assets/logo.svg', width: 28, height: 28, colorFilter: ColorFilter.mode(Theme.of(context).colorScheme.secondary, BlendMode.srcIn)),
+            Icon(Icons.school, size: 28, color: Theme.of(context).colorScheme.secondary),
             const SizedBox(width: 8),
             const Text('NEXORA'),
           ],
