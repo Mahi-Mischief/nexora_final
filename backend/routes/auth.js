@@ -72,11 +72,22 @@ router.post('/google', async (req, res) => {
     const { idToken } = req.body;
     if (!idToken) return res.status(400).json({ error: 'Missing idToken' });
 
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const email = decoded.email;
-    const name = decoded.name || '';
-    const firstName = name ? name.split(' ')[0] : null;
-    const lastName = name ? name.split(' ').slice(1).join(' ') : null;
+    let email, firstName, lastName;
+    
+    // Try to verify with Firebase if available, otherwise skip verification
+    try {
+      const decoded = await admin.auth().verifyIdToken(idToken);
+      email = decoded.email;
+      const name = decoded.name || '';
+      firstName = name ? name.split(' ')[0] : null;
+      lastName = name ? name.split(' ').slice(1).join(' ') : null;
+    } catch (firebaseErr) {
+      // Firebase not configured - for development, accept the token as-is
+      // In production, this should not happen
+      console.warn('Firebase verification not available, skipping token verification');
+      // For now, reject since we can't verify
+      return res.status(401).json({ error: 'Firebase not configured - cannot verify token' });
+    }
 
     // find or create user by email
     let { rows } = await db.query('SELECT id, username, email, first_name, last_name, role, school, age, grade, address FROM users WHERE email=$1', [email]);
