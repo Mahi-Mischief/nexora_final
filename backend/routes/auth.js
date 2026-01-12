@@ -27,8 +27,8 @@ router.post('/signup', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('SIGNUP ERROR:', err.message, err.code);
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
@@ -46,8 +46,8 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Server error' });
+    console.error('LOGIN ERROR:', err.message, err.code);
+    res.status(500).json({ error: 'Server error: ' + err.message });
   }
 });
 
