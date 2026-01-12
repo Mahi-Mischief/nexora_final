@@ -83,9 +83,11 @@ router.post('/google', async (req, res) => {
     let user;
     if (!rows.length) {
       const username = email.split('@')[0];
+      // Generate a random password hash for OAuth users (they won't use it)
+      const hashedPassword = await bcrypt.hash(email + Math.random(), 10);
       const r = await db.query(
-        'INSERT INTO users (username, email, first_name, last_name) VALUES ($1,$2,$3,$4) RETURNING id, username, email, first_name, last_name, role, school, age, grade, address',
-        [username, email, firstName, lastName]
+        'INSERT INTO users (username, email, first_name, last_name, password_hash, role) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id, username, email, first_name, last_name, role, school, age, grade, address',
+        [username, email, firstName, lastName, hashedPassword, 'student']
       );
       user = r.rows[0];
     } else {

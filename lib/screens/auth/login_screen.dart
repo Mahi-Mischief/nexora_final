@@ -133,29 +133,39 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               label: const Text('Continue with Google'),
               onPressed: () async {
                 setState(() => _loading = true);
-                final idToken = await AuthService.signInWithGoogle();
-                if (idToken == null) {
-                  setState(() => _loading = false);
-                  return;
-                }
-                final resp = await Api.post('/api/auth/google', body: {'idToken': idToken});
-                if (resp.statusCode == 200) {
-                  final j = jsonDecode(resp.body) as Map<String, dynamic>;
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.setString('nexora_token', j['token']);
-                  await prefs.setString('nexora_user', jsonEncode(j['user']));
-                  final user = NexoraUser.fromJson(j['user']);
-                  await ref.read(authProvider.notifier).updateUser(user);
-                  if (!mounted) return;
-                  if (user.firstName == null) {
-                    Navigator.of(context).pushReplacementNamed(ProfileInfoScreen.routeName);
-                  } else {
-                    Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+                try {
+                  final idToken = await AuthService.signInWithGoogle();
+                  if (idToken == null) {
+                    if (!mounted) return;
+                    setState(() => _loading = false);
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google sign-in was cancelled')));
+                    return;
                   }
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Google sign-in failed')));
+                  final resp = await Api.post('/api/auth/google', body: {'idToken': idToken});
+                  if (!mounted) return;
+                  if (resp.statusCode == 200) {
+                    final j = jsonDecode(resp.body) as Map<String, dynamic>;
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.setString('nexora_token', j['token']);
+                    await prefs.setString('nexora_user', jsonEncode(j['user']));
+                    final user = NexoraUser.fromJson(j['user']);
+                    await ref.read(authProvider.notifier).updateUser(user);
+                    if (!mounted) return;
+                    if (user.firstName == null) {
+                      Navigator.of(context).pushReplacementNamed(ProfileInfoScreen.routeName);
+                    } else {
+                      Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+                    }
+                  } else {
+                    setState(() => _loading = false);
+                    final errorMsg = jsonDecode(resp.body)['error'] ?? 'Google sign-in failed';
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(errorMsg)));
+                  }
+                } catch (e) {
+                  if (!mounted) return;
+                  setState(() => _loading = false);
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
                 }
-                setState(() => _loading = false);
               },
             ),
             const SizedBox(height: 32),
