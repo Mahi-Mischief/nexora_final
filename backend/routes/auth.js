@@ -12,10 +12,23 @@ const admin = require('../firebaseAdmin');
 router.post('/signup', async (req, res) => {
   try {
     const { username, email, password, role } = req.body;
+    console.log('Signup attempt:', { username, email, role });
     if (!username || !email || !password) return res.status(400).json({ error: 'Missing fields' });
 
-    const { rows } = await db.query('SELECT id FROM users WHERE username=$1 OR email=$2', [username, email]);
-    if (rows.length) return res.status(409).json({ error: 'User already exists' });
+    const { rows: userRows } = await db.query('SELECT username, email FROM users WHERE LOWER(username)=LOWER($1) OR LOWER(email)=LOWER($2)', [username, email]);
+    console.log('User check result:', userRows);
+    if (userRows.length) {
+      for (const existing of userRows) {
+        if (existing.username.toLowerCase() === username.toLowerCase()) {
+          console.log('Username already exists:', username);
+          return res.status(409).json({ error: 'Username already taken' });
+        }
+        if (existing.email.toLowerCase() === email.toLowerCase()) {
+          console.log('Email already exists:', email);
+          return res.status(409).json({ error: 'Email already in use' });
+        }
+      }
+    }
 
     const hashed = await bcrypt.hash(password, 10);
     const userRole = role && (role === 'teacher' || role === 'student') ? role : 'student';
@@ -25,6 +38,7 @@ router.post('/signup', async (req, res) => {
     );
     const user = insert.rows[0];
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    console.log('User created successfully:', user.id);
     res.json({ token, user });
   } catch (err) {
     console.error('SIGNUP ERROR:', err.message, err.code);
@@ -38,13 +52,13 @@ router.post('/login', async (req, res) => {
     const { usernameOrEmail, password } = req.body;
     if (!usernameOrEmail || !password) return res.status(400).json({ error: 'Missing fields' });
 
-    const { rows } = await db.query('SELECT id, username, email, password_hash, role FROM users WHERE username=$1 OR email=$1', [usernameOrEmail]);
+    const { rows } = await db.query('SELECT id, username, email, password_hash, role, first_name, last_name, school, age, grade, address FROM users WHERE LOWER(username)=LOWER($1) OR LOWER(email)=LOWER($1)', [usernameOrEmail]);
     if (!rows.length) return res.status(401).json({ error: 'Invalid credentials' });
     const user = rows[0];
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role, first_name: user.first_name, last_name: user.last_name, school: user.school, age: user.age, grade: user.grade, address: user.address } });
   } catch (err) {
     console.error('LOGIN ERROR:', err.message, err.code);
     res.status(500).json({ error: 'Server error: ' + err.message });
