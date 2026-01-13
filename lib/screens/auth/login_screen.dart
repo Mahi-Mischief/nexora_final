@@ -168,6 +168,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 }
               },
             ),
+            const SizedBox(height: 16),
+            // Temporary testing button
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+              ),
+              onPressed: () async {
+                // Create dummy user for testing
+                final dummyUser = NexoraUser(
+                  id: 999,
+                  username: 'testuser',
+                  email: 'test@example.com',
+                  firstName: 'Test',
+                  lastName: 'User',
+                  role: 'student',
+                );
+                await ref.read(authProvider.notifier).updateUser(dummyUser);
+                if (!mounted) return;
+                Navigator.of(context).pushReplacementNamed(HomeScreen.routeName);
+              },
+              child: const Text('Skip Login (Testing)'),
+            ),
             const SizedBox(height: 32),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
