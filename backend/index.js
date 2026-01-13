@@ -11,6 +11,7 @@ const announcementsRoutes = require('./routes/announcements');
 const messagesRoutes = require('./routes/messages');
 const approvalsRoutes = require('./routes/approvals');
 const socialRoutes = require('./routes/social');
+const teamsRoutes = require('./routes/teams');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,5 +30,24 @@ app.use('/api/announcements', announcementsRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/approvals', approvalsRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/teams', teamsRoutes);
 
-app.listen(PORT, () => console.log(`NEXORA backend listening on ${PORT}`));
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('ERROR:', err.message);
+  res.status(500).json({ error: err.message });
+});
+
+const server = app.listen(PORT, () => {
+  console.log(`NEXORA backend listening on ${PORT}`);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+  process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+  console.error('Unhandled rejection:', err);
+});

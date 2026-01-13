@@ -48,8 +48,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
-  Future<bool> signup(String username, String email, String password) async {
-    final res = await AuthService.signup(username: username, email: email, password: password);
+  Future<bool> signup(String username, String email, String password, String role) async {
+    final res = await AuthService.signup(username: username, email: email, password: password, role: role);
     if (res != null) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('nexora_token', res['token']);
@@ -86,7 +86,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
     // Fire-and-forget remote update so UI flow (splash/login) isn't blocked by network
     final token = prefs.getString('nexora_token');
     if (token != null) {
-      AuthService.updateProfile(token: token, user: user).catchError((_) {});
+      AuthService.updateProfile(token: token, user: user).catchError((e) {
+        // Log error but don't block UI
+        print('Error updating profile: $e');
+      });
     }
   }
 }
