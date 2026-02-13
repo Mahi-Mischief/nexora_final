@@ -1,7 +1,3 @@
-Perfect. Here’s a **full professional README template** for **Nexora** that’s startup- and GitHub-ready. You can plug in screenshots, links, and any missing info.
-
----
-
 # Nexora
 
 **AI-Powered Productivity and Automation Platform**
